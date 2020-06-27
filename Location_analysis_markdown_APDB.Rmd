@@ -118,7 +118,7 @@ print(paste("Number of subjects = ",nsub) )
 ```{r prunetrials}
 
 child_RT_short <- filter(child_RT_wanted,Type %in% c('PLACE1','PUZZLE COMPLETE'))
-child_RT_pick <- NA #initialise column to hold RT for picking first item
+child_RT_short$RTpick <- NA #initialise column to hold RT for picking first item
 # We'll now move the time.elapsed alongside PUZZLE COMPLETE
 w<-which(child_RT_short$Type=='PUZZLE COMPLETE')
 child_RT_short$RTpick[w]<-child_RT_short$time.elapsed[(w-1)]
@@ -402,14 +402,22 @@ vocabbyoung <- filter(myaggyoung,condition=='blocked')
 
 #Plot overall mean attempts by block
 
-plot(vocabiold$block,vocabiold$dv,type='b',ylim =ylim,main=mymain,xlab='Block of 10',ylab=depname)
-lines(vocabbold$block,vocabbold$dv,type='b',col='red')
+
+plot(vocabiold$block,vocabiold$dv,type='b',ylim =ylim,main=mymain,xlab='Block of 10',ylab=depname,xaxt='n')
+#Need to suppress xaxis with xaxt as it puts in fractional values!
+if(alltogether==0){
+legend((legx+1.5),legy, legend=c("Below 8 yr", "8 yr plus"),
+       pch=c(15,1), lty=1, cex=0.75)
+}
 legend(legx,legy, legend=c("Blocked", "Interleaved"),
-       col=c("red", "black"), lty=1, cex=0.8)
+       col=c("red", "black"), lty=1, cex=0.75)
+lines(vocabbold$block,vocabbold$dv,type='b',col='red')
 if(alltogether==0){
 lines(vocabiyoung$block,vocabiyoung$dv,type='b',pch=15)
 lines(vocabbyoung$block,vocabbyoung$dv,type='b',pch=15,col='red')
-  }
+}
+#add sensible x axis
+axis(side=1, col="black", at=c(1:4), labels=c(1:4)) 
 
 # Just a rough plot for initial inspection - really need something better with indication of variation
 }
@@ -425,15 +433,12 @@ youngfile<-vocabdatyoung
 mystat <- 'Mean'
 depname<-paste(mystat,'attempts')
 ylim <- c(1,2.5)
-legx<-1.5 #location of legend on x axis
-legy<-2
-alltogether <- 0 #separate lines for old and young
-#doplot(oldfile,youngfile,depname,ylim,mystat,alltogether,legx,legy,mymain)
-alltogether <- 1 #combines old and young
+legx<-1 #location of legend on x axis
+legy<-2.3
+alltogether <- 0 #set to 1 for separate lines for old and young
+par(mfrow=c(1,2))
 mymain <- 'Accuracy'
 doplot(oldfile,youngfile,depname,ylim,mystat,alltogether,legx,legy,mymain)
-
-
 
 # repeat for RTpick
 vocabdatold$myX <- vocabdatold$RTpick.k
@@ -445,11 +450,11 @@ depname<-paste(mystat,'RT (ms)')
 ylim <- c(5000,10000)
 alltogether <- 0 #separate lines for old and young
 mymain <-'Reaction time'
-legx=2
-legy=9000
+legx=1
+legy=10000
 #doplot(oldfile,youngfile,depname,ylim,mystat,alltogether,legx,legy,mymain)
 
-alltogether <- 1
+alltogether <- 0
 doplot(oldfile,youngfile,depname,ylim,mystat,alltogether,legx,legy,mymain)
 
 # An earlier version of script had preposition data, but this is omitted here because
@@ -507,6 +512,8 @@ t.test(vocmedians$slope ~ vocmedians$condition)
 
 pirateplot(slope~condition,data=vocmedians)
 
+pirateplot(slope~condition+ageband,data=vocmedians)
+
 
 ```
 
@@ -541,7 +548,7 @@ t.test(vocerrs$decline ~ vocerrs$condition)
 
 
 pirateplot(decline~condition,data=vocerrs)
-
+pirateplot(decline~condition+ageband,data=vocerrs)
 # Create column with first block with no errors
 vocerrs$blocklearned<-NA #initialise
 vocerrs$blocklearned[seq(1,nrow(vocerrs),4)] <- 5 #default to not learned
@@ -613,5 +620,13 @@ legend(1,5500,legend=c("Blocked", "Interleaved"),
        col=c("red", "black"), lty=1, cex=0.8)
 ```
 
+For talk on June 2020, consider looking more closely at age effects.
 
-       
+```{r blockconditionage}
+
+aov_ageblockcond <- aov(RTpick.k~ block*condition*ageband + Error(subject), data = vocmedians)
+summary(aov_ageblockcond)
+
+```
+Confirms huge effect of block, plus effect of condition, and effect of age band. 
+Interaction between condition and ageband is marginal
